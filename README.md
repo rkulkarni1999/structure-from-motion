@@ -46,7 +46,7 @@ The camera is calibrated after resizing using a Radial-Tangential model
 with 2 radial parameters and 1 tangential parameter using the MATLAB
 R2022a’s Camera Calibrator Application (See Fig. 2).
 
-![Figure 2: Calibration using MATLAB toolbox. Left: Original image, Right: Undistorted image.](images/figure2.png)
+<!-- ![Figure 2: Calibration using MATLAB toolbox. Left: Original image, Right: Undistorted image.](images/figure2.png) -->
 
 
 

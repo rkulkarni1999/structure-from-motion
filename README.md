@@ -53,32 +53,6 @@ R2022a’s Camera Calibrator Application (See Fig. 2).
 Figure 2: Calibration using MATLAB toolbox. Left: Original image, Right:
 Undistorted image.
 
-The images provided are already distortion corrected and resized to
-800 × 600*p**x*.. Since Structure from Motion relies heavily on good
-features and their matching, keypoint matching (SIFT keypoints and
-descriptors are used for high robustness) data is also provided in the
-same folder for pairs of images. The data folder contains 4 matching
-files named matching\*.txt where \* refers to numbers from 1 to 5 . For
-eg., matching3.txt contains the matching between the third image and
-images that come after (such as images 4 and 5), i.e.,
-ℐ<sub>3</sub> ↔ ℐ<sub>4</sub>, ℐ<sub>3</sub> ↔ ℐ<sub>5</sub>. This is
-the reason image 5 does not have a text file.
-
-The file format of the matching file is described next. Each matching
-file is formatted as follows for the i th matching file:
-
-nFeatures: (the number of feature points of the *i*<sup>th </sup>
-image - each following row specifies matches across images given a
-feature location in the *i*<sup>*t**h*</sup> image.)
-
-Each Row: (the number of matches for the *j*<sup>th </sup> feature) (Red
-Value) (Green Value) (Blue Value)
-(*u*<sub>current image </sub>)(*v*<sub>current image </sub>) (image id)
-( *u*<sub>image id image </sub>)(*v*<sub>image id image </sub>) (image
-id) ( *u*<sub>image  id image </sub>) (v\_{image id image }) ...
-
-An example of matching1.txt is given below:
-
 nFeatures: 3930
 
 $\begin{array}{lllllllll}2 & 255255255 & 5.08304 & 116.978 & 349.0748 & 166.783\end{array}$

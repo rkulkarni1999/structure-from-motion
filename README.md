@@ -37,7 +37,8 @@ The data is a set of 5 images of Unity Hall at Worcester Polytechnic Institute (
 Fig. 1), using a Samsung S22 Ultra’s primary camera at f/1.8 aperture,
 ISO 50 and 1/500 sec shutter speed.
 
-<img src="2024_02_17_da32241138c7cd925770g-03(1)" alt="image" />
+<!-- ![Description of the image](rkulkarni1_p2\Phase1\images/myImage.png) -->
+![](https://cdn.mathpix.com/cropped/2024_02_17_da32241138c7cd925770g-03.jpg?height=284&width=1740&top_left_y=129&top_left_x=171)
 
 Figure 1: Images of Unity Hall used to perform SfM.
 
@@ -45,7 +46,8 @@ The camera is calibrated after resizing using a Radial-Tangential model
 with 2 radial parameters and 1 tangential parameter using the MATLAB
 R2022a’s Camera Calibrator Application (See Fig. 2).
 
-<img src="2024_02_17_da32241138c7cd925770g-03" alt="image" />
+![](https://cdn.mathpix.com/cropped/2024_02_17_da32241138c7cd925770g-03.jpg?height=385&width=1431&top_left_y=875&top_left_x=171)
+
 
 Figure 2: Calibration using MATLAB toolbox. Left: Original image, Right:
 Undistorted image.

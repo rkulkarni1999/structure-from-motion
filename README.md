@@ -1,82 +1,8 @@
-# Buildings built in minutes - SfM and NeRF
+# Buildings built in minutes - Structure from Motion
 
-Table of Contents:
+# 1. Introduction 
 
--   1.  Deadline
-
--   1.  Introduction and Starter Code
-
--   1.  Dataset for Classical SfM
-
--   1.  Phase 1: Traditional Approach
-
--   4.1. Feature Matching
-
--   4.2. Estimating Fundamental Matrix
-
--   4.2.1. Epipolar Geometry
-
--   4.2.2. Fundamental Matrix
-
--   4.2.3. Match Outlier Rejection using RANSAC
-
--   4.3. Estimate Essential Matrix from Fundamental Matrix
-
--   4.4. Estimate Camera Pose from Essential Matrix
-
--   4.5. Check for Cheirality Condition using Triangulation
-
--   4.5.1. Non-Linear Triangulation
-
--   4.6. Perspective- *n*-points
-
--   4.6.1. Linear Camera Pose Estimation
-
--   4.6.2. PnP RANSAC
-
--   4.6.3. NonLinear PnP
-
--   4.7. Bundle Adjustment
-
--   4.7.1. Visibility Matrix
-
--   4.7.2. Bundle Adjustment
-
--   1.  Putting the pipeline together
-
--6. Phase 2: Deep Learning Approach
-
--   6.1 Abstract and Method
-
--   6.2 Synthetic Results
-
--   1.  Submission Guidelines
-
-∘ 7.1. File tree and naming
-
--   7.2. Report
-
--   1.  Extra Credit
-
--   8.1. Phase 1
-
--   8.2. Phase 2
-
--   1.  Collaboration Policy
-
--   1.  Acknowledgments
-
-# 1. Deadline
-
-11:59:59 PM, February 21, 2024 for Phase 1 and 11:59:59 PM, March 11,
-2024 for Phase 2. This project is to be done in groups of 2 .
-
-# 2. Introduction and Starter Code
-
-We have been playing with images for so long, mostly in 2D scene. Recall
-project 1 where we stitched multiple images with about 30 − 50% common
-features between a couple of images. Now let’s learn how to reconstruct
-a 3D scene and simultaneously obtain the camera poses of a monocular
+Let’s reconstruct a 3D scene and simultaneously obtain the camera poses of a monocular
 camera w.r.t. the given scene. This procedure is known as Structure from
 Motion (SfM). As the name suggests, you are creating the entire rigid
 structure from a set of images with different view points (or
@@ -89,26 +15,25 @@ open source SfM algorithm available online like VisualSFM. Try them!
 Let’s learn how to recreate such algorithm. There are a few steps that
 collectively form SfM:
 
--   Feature Matching and Outlier rejection using RANSAC
+- Feature Matching and Outlier rejection using RANSAC
 
--   Estimating Fundamental Matrix
+- Estimating Fundamental Matrix
 
--   Estimating Essential Matrix from Fundamental Matrix
+- Estimating Essential Matrix from Fundamental Matrix
 
--   Estimate Camera Pose from Essential Matrix
+- Estimate Camera Pose from Essential Matrix
 
--   Check for Cheirality Condition using Triangulation
+- Check for Cheirality Condition using Triangulation
 
--   Perspective-n-Point
+- Perspective-n-Point
 
--   Bundle Adjustment
+- Bundle Adjustment
 
-Download the starter code for both the phases here.
 
-# 3. Dataset for Classical SfM
+# 2. Dataset for Classical SfM
 
-You are going to run classical SfM algorithm on the data provided here.
-The data given to you are a set of 5 images of Unity Hall at WPI (See
+We are going to run classical SfM algorithm on the data provided here.
+The data is a set of 5 images of Unity Hall at Worcester Polytechnic Institute (See
 Fig. 1), using a Samsung S22 Ultra’s primary camera at f/1.8 aperture,
 ISO 50 and 1/500 sec shutter speed.
 

@@ -2,6 +2,10 @@ import torch
 import torch.nn as nn
 import numpy as np
 
+#########
+# GPU
+#########
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 ####################################################
 # NeRF Model : Input - 5D, Output - r,g,b and sigma
 ####################################################
@@ -43,9 +47,4 @@ class NerfModel(nn.Module):
         h = self.block3(torch.cat((h, emb_d), dim=1)) # h: [batch_size, hidden_dim // 2]
         c = self.block4(h) # c: [batch_size, 3]
         return c, sigma
-
-# Compute Transmittance
-def compute_accumulated_transmittance(alphas):
-    accumulated_transmittance = torch.cumprod(alphas, 1)
-    return torch.cat((torch.ones((accumulated_transmittance.shape[0], 1), device=alphas.device),accumulated_transmittance[:, :-1]), dim=-1)
 

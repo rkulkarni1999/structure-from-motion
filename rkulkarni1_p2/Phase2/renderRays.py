@@ -13,38 +13,13 @@ import math
 import numpy as np
 import random
 import torch.nn.functional as F
-from loadDataset import device
-from NeRFModel import compute_accumulated_transmittance
 
-# # Setting Random Seed for reproducibility
-# # np.random.seed(0)
-
-# ####################################
-# # Normalizing an Image to [0,255]
-# ####################################
-# def normalize(image):                                                                                                                                                             
-#     return cv2.normalize(image,dst=None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8UC1)
-
-# ######################################################
-# # COMPUTE RAY DIRECTIONS AND ORIGINS FOR AN IMAGE
-# ######################################################
-# def generate_ray_points(ray_directions, ray_origins, num_ray_samples, t_near, t_far, num_rand_rays=None, n_frequencies=4, rand=False):
-    
-#     time_intervals = torch.linspace(t_near, t_far, num_ray_samples)
-#     noise_shape = list(ray_origins.shape[:-1]) + [num_ray_samples]
-#     noise = torch.rand(size = noise_shape) * (t_far - t_near)/num_ray_samples
-#     time_intervals = time_intervals + noise
-#     time_intervals = time_intervals.to(device)
-    
-#     rays = ray_origins[..., None, :] + ray_directions[..., None, :]* time_intervals[...,:, None]  # (n_rays x n_samples x 3) 
-    
-#     return time_intervals, rays
-
+from NeRFModel import device 
+from computeTransmittance import compute_accumulated_transmittance
 
 ###############################
 # RENDER RAYS
 ############################### 
-
 def render_rays(nerf_model, ray_origins, ray_directions, hn=0, hf=0.5, nb_bins=192):
     
     t = torch.linspace(hn, hf, nb_bins, device=device).expand(ray_origins.shape[0], nb_bins)

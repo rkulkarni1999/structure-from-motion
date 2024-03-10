@@ -12,15 +12,11 @@ from PIL import Image
 from torchvision import transforms
 
 from torch.utils.data import DataLoader
-from NeRFModel import NerfModel
+from NeRFModel import NerfModel, device
 
-
-# GPU
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-###########################################
+#################################################################################### 
 # DATASET GENERATION FOR NeRF {TODO: Compare the whole tensor with Pickle Dataset}
-########################################### 
+####################################################################################
 # Making dataset out of data.
 def loadDataset(data_path, mode):
     # PARAMETERS
@@ -78,7 +74,9 @@ def loadDataset(data_path, mode):
     all_rays = all_rays[:, :6]
     all_rgbs = torch.cat(all_rgbs, dim=0)  # (N, 3), where N is the total number of pixels across all images
 
-    return all_rays, all_rgbs
+    dataset = concatenate_tensors(all_rays, all_rgbs)
+
+    return dataset
 
 def get_ray_directions(H, W, focal):
     grid = create_meshgrid(H, W, normalized_coordinates=False)[0]

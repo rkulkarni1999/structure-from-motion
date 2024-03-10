@@ -4,6 +4,11 @@ from tqdm import tqdm
 import torch.nn as nn
 import matplotlib.pyplot as plt
 from torch.utils.data import DataLoader
+from torch.utils.tensorboard import SummaryWriter
+import time
+import os
+
+from loadDataset import loadDataset
 
 
 @torch.no_grad()
@@ -22,7 +27,7 @@ def test(hn, hf, dataset, chunk_size=10, img_index=0, nb_bins=192, H=400, W=400)
 
     plt.figure()
     plt.imshow(img)
-    plt.savefig(f'novel_views/img_{img_index}.png', bbox_inches='tight')
+    plt.savefig(f'./rkulkarni1_p2/Phase2/outputs/novel_views/img_{img_index}.png', bbox_inches='tight')
     plt.close()
 
 
@@ -101,11 +106,22 @@ def render_rays(nerf_model, ray_origins, ray_directions, hn=0, hf=0.5, nb_bins=1
     return c + 1 - weight_sum.unsqueeze(-1)
 
 
-def train(nerf_model, optimizer, scheduler, data_loader, device='cpu', hn=0, hf=1, nb_epochs=int(1e5),
-        nb_bins=192, H=400, W=400):
+def train(nerf_model, optimizer, scheduler, data_loader, device='cpu', hn=0, hf=1, nb_epochs=int(1e5),nb_bins=192, H=400, W=400, checkpoint_dir="./rkulkarni1_p2/Phase2/checkpoints"):
+    
+    # Initialize TensorBoard SummaryWriter
+    current_time = time.strftime("%Y%m%d-%H%M%S")
+    writer = SummaryWriter(f'runs/nerf_experiment_{current_time}')
+    
     training_loss = []
-    for _ in tqdm(range(nb_epochs)):
-        for batch in data_loader:
+    
+    total_iterations = 0
+        
+    os.makedirs(checkpoint_dir, exist_ok=True) # create directory if there exist none. 
+
+    for epoch in tqdm(range(nb_epochs), desc="Epoch Progress"):
+        
+        epoch_loss = 0.0
+        for batch_idx, batch in enumerate(data_loader):
             ray_origins = batch[:, :3].to(device)
             ray_directions = batch[:, 3:6].to(device)
             ground_truth_px_values = batch[:, 6:].to(device)
@@ -116,29 +132,92 @@ def train(nerf_model, optimizer, scheduler, data_loader, device='cpu', hn=0, hf=
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            
+            # Update total and epoch losses
+            epoch_loss += loss.item()
             training_loss.append(loss.item())
-            print(len(training_loss))
-        scheduler.step()
+            
+            # Log loss for each iteration
+            writer.add_scalar('Loss/Iteration', loss.item(), total_iterations)
+            total_iterations += 1
 
-        for img_index in range(200):
-            test(hn, hf, testing_dataset, img_index=img_index, nb_bins=nb_bins, H=H, W=W)
+        # Log average epoch loss
+        epoch_loss_avg = epoch_loss / len(data_loader)
+        writer.add_scalar('Loss/Epoch', epoch_loss_avg, epoch+1)
+        scheduler.step()
+        
+        # Save checkpoint after every epoch
+        checkpoint_path = os.path.join(checkpoint_dir, f"nerf_model_ship_epoch_{epoch+1}.ckpt")
+        torch.save({
+            'epoch': epoch + 1,
+            'model_state_dict': nerf_model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'scheduler_state_dict': scheduler.state_dict(),
+            'loss': training_loss,
+        }, checkpoint_path)
+        
+        print(f"Checkpoint saved at {checkpoint_path}")
+
+        # for img_index in range(200):
+        #     test(hn, hf, testing_dataset,chunk_size=5, img_index=img_index, nb_bins=nb_bins, H=H, W=W)
+            
+    writer.close() # close tensorboard
     return training_loss
+
+def load_checkpoint(checkpoint_path, model, optimizer, scheduler):
+    checkpoint = torch.load(checkpoint_path)
+    model.load_state_dict(checkpoint['model_state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
+    epoch = checkpoint['epoch']
+    loss = checkpoint['loss']
+    return epoch, loss
 
 if __name__ == '__main__':
     device = 'cuda'
     
-    training_dataset = torch.from_numpy(np.load('./rkulkarni1_p2/Phase2/Data/training_data.pkl', allow_pickle=True))
-    testing_dataset = torch.from_numpy(np.load('./rkulkarni1_p2/Phase2/Data/testing_data.pkl', allow_pickle=True))
+    # load datasets
+    # training_dataset = torch.from_numpy(np.load('./rkulkarni1_p2/Phase2/Data/lego/training_data.pkl', allow_pickle=True))
+    # testing_dataset = torch.from_numpy(np.load('./rkulkarni1_p2/Phase2/Data/lego/testing_data.pkl', allow_pickle=True))
+    
+    # Choose which model to train/test
+    data_flag = "ship"
+    
+    if data_flag == "lego":
+        data_path_lego = "./rkulkarni1_p2/Phase2/Data/lego/" 
+        training_dataset = loadDataset(data_path=data_path_lego, mode="train")    
+        testing_dataset = loadDataset(data_path=data_path_lego, mode="test")       
+    elif data_flag == "ship":
+        data_path_ship = "./rkulkarni1_p2/Phase2/Data/ship/"
+        training_dataset = loadDataset(data_path=data_path_ship, mode="train")    
+        testing_dataset = loadDataset(data_path=data_path_ship, mode="test")
+    else:
+        data_path_lego = "./rkulkarni1_p2/Phase2/Data/lego/" 
+        training_dataset = loadDataset(data_path=data_path_lego, mode="train")    
+        testing_dataset = loadDataset(data_path=data_path_lego, mode="test")  
+    
+    # Initialize model, optimizer and scheduler
     model = NerfModel(hidden_dim=256).to(device)
     model_optimizer = torch.optim.Adam(model.parameters(), lr=5e-4)
     scheduler = torch.optim.lr_scheduler.MultiStepLR(model_optimizer, milestones=[2, 4, 8], gamma=0.5)
-    data_loader = DataLoader(training_dataset, batch_size=1024, shuffle=True)
-    ################################
-    # Evaluating the Test Function
-    ################################
     
-    hn = 2
-    hf = 6
-    for img_index in range(5):
-        test(hn, hf, testing_dataset,chunk_size=5, img_index=img_index, nb_bins=192, H=400, W=400)
-    # train(model, model_optimizer, scheduler, data_loader, nb_epochs=16, device=device, hn=2, hf=6, nb_bins=192, H=400,W=400)
+    ##############################
+    # CHANGE FLAG TO CHANGE MODE
+    ##############################
+    train_model = True
+    
+    checkpoint_path = "./rkulkarni1_p2/Phase2/checkpoints/nerf_model_ship_epoch_1.ckpt"  # {TODO: make seperate folders for checkpoints}
+    
+    if train_model:
+        data_loader = DataLoader(training_dataset, batch_size=512, shuffle=True)
+        train(model, model_optimizer, scheduler, data_loader, device=device, hn=2, hf=6, nb_bins=192, H=400, W=400)
+    else:
+        # Load the checkpoint
+        load_checkpoint(checkpoint_path, model, model_optimizer, scheduler)
+    
+    # Run test loop after loading the checkpoint
+    for img_index in range(200):  # Adjust the range based on your specific requirements
+        test(hn=2, hf=6, dataset=testing_dataset, chunk_size=2, img_index=img_index, nb_bins=192, H=400, W=400)
+    
+    # data_loader = DataLoader(training_dataset, batch_size=1024, shuffle=True)
+    # training_loss = train(model, model_optimizer, scheduler, data_loader, nb_epochs=16, device=device, hn=2, hf=6, nb_bins=192, H=400,W=400)

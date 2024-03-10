@@ -1,3 +1,6 @@
+################################
+# IMPORTING LIBRARIES
+################################
 import argparse
 import glob
 from tqdm import tqdm
@@ -8,69 +11,57 @@ import torch
 import matplotlib.pyplot as plt
 import os
 import json
-from NeRFModel import *
 import cv2 
 import math
+import numpy as np
+import random
+import torch.nn.functional as F
 
-# Assigning GPU
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# Setting Random Seed for reproducibility
-np.random.seed(0)
-
-# Making dataset out of data. 
-def loadDataset(data_path, mode):
-    """
-    Input:
-        data_path: dataset path
-        mode: train or test
-    Outputs:
-        camera_info: image width, height, camera matrix 
-        images: images
-        pose: corresponding camera pose in world frame
-    """
-    if mode in ["train", "val", "test"]:
-        json_file = f"transforms_{mode}.json"
-    else:
-        raise ValueError("Mode must be 'train', 'val', or 'test'.")
-    
-    transforms_path = os.path.join(data_path, json_file)
-    
-    with open(transforms_path) as file:
-        data = json.load(file)
+# Positional Encoding
+def positional_encoding(x, L):
         
-    images     = []
-    transforms = []
+        out = [x]
+        for jj in range(L):
+            out.append(torch.sin(2**jj*x))
+            out.append(torch.cos(2**jj*x))
+        return torch.cat(out, dim=1)
     
-    for frame in data["frames"]:
-        img_file = os.path.join(data_path, frame["file_path"] + ".png")
-        image = cv2.imread(img_file)  # {REMEMBER} : Image is read in BGR 
-        image = cv2.resize(image, (200, 200), interpolation=cv2.INTER_AREA)
-        images.append(torch.tensor(image).permute(2, 0, 1).to(device))
-        
-        transform = torch.tensor(frame["transform_matrix"]).to(device)
-        transforms.append(transform)
-        
-    camera_angle_x = data["camera_angle_x"]
-    focal_length = 0.5 * images[0].shape[1] / math.tan(0.5 * camera_angle_x)
-    focal_length = torch.tensor(focal_length).to(device)
+# Convert to MiniBatches
+def mini_batches(inputs, batch_size):
+    return [inputs[i:i + batch_size] for i in range(0, inputs.shape[0], batch_size)]
+
+# Volumetric Rendering
+def volumetric_rendering(pred, time_intervals, ray_directions, ray_origins):
     
-    return focal_length, torch.stack(transforms), torch.stack(images)
+    rgb = torch.relu(pred[...,:3])
+    sigma_a = torch.relu(pred[..., 3])
+    
+    delta_time_interval = time_intervals[..., 1:] - time_intervals[..., :-1]
+    
+    t1 = torch.Tensor([1e10]).expand(delta_time_interval[...,:1].shape).to(device)
+    delta_time_interval = torch.cat([delta_time_interval, t1], -1) 
 
-# fl, mats, imgs = loadDataset(data_path= "./rkulkarni1_p2\Phase2\Data", mode="train") # {SANITTY CHECK FOR FUNCTION}
+##################################
+# Sanity Check for PixelsToRays()
+##################################
+# pose  = poses[0]
+# image = images[0]
+# height, width = image.shape[1], image.shape[2] 
+# rotation, translation = pose[:3, :3], pose[:3, 3]
+# PixelsToRays(focal, height, width, rotation, translation)
 
-
-def PixelToRay(camera_info, pose, pixelPosition, args):
-    """
-    Input:
-        camera_info: image width, height, camera matrix 
-        pose: camera pose in world frame
-        pixelPosition: pixel position in the image
-        args: get near and far range, sample rate ...
-    Outputs:
-        ray origin and direction
-    """
-    pass
+# def PixelToRay(camera_info, pose, pixelPosition, args):
+#     """
+#     Input:
+#         camera_info: image width, height, camera matrix 
+#         pose: camera pose in world frame
+#         pixelPosition: pixel position in the image
+#         args: get near and far range, sample rate ...
+#     Outputs:
+#         ray origin and direction
+#     """
+#     pass
 
 # def generateBatch(images, poses, camera_info, args):
 #     """

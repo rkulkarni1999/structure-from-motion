@@ -11,8 +11,6 @@ from torch.utils.data import DataLoader
 from loadDataset import device
 from NeRFModel import NerfModel 
 from renderRays import render_rays
-
-
 ###################################################################
 # SANITY CHECK FOR THE PICKLE DATASET
 ##################################################################
@@ -24,35 +22,41 @@ W = 400
 epochs = int(1e5)
 
 training_dataset = torch.from_numpy(np.load('./rkulkarni1_p2/Phase2/Data/training_data.pkl', allow_pickle=True))
+testing_dataset = torch.from_numpy(np.load('./rkulkarni1_p2/Phase2/Data/testing_data.pkl', allow_pickle=True))
 # print(training_dataset.shape)
-model = NerfModel(hidden_dim=256).to(device)
-model_optimizer = torch.optim.Adam(model.parameters(), lr=5e-4)
-scheduler = torch.optim.lr_scheduler.MultiStepLR(model_optimizer, milestones=[2, 4, 8], gamma=0.5)
-data_loader = DataLoader(training_dataset, batch_size=1024, shuffle=True)
+print(testing_dataset.shape)
+# model = NerfModel(hidden_dim=256).to(device)
+# model_optimizer = torch.optim.Adam(model.parameters(), lr=5e-4)
+# scheduler = torch.optim.lr_scheduler.MultiStepLR(model_optimizer, milestones=[2, 4, 8], gamma=0.5)
+# data_loader = DataLoader(training_dataset, batch_size=1024, shuffle=True)
 
-training_loss = [] 
-# Iterate through the DataLoader
-for batch in data_loader:
+# training_loss = [] 
+# # Iterate through the DataLoader
+# for batch in data_loader:
     
-    ray_origins            = batch[:,:3].to(device)
-    print(f"Ray Origins : {ray_origins}")
-    ray_directions         = batch[:,3:6].to(device)
-    print(f"Ray Directions : {ray_directions}")
-    ground_truth_pixel_values = batch[:,6:].to(device)
-    print(f"Ground Pixel Values : {ground_truth_pixel_values}")
-    regenerated_pixel_values = render_rays(model, ray_origins, ray_directions, hn=hn, hf=hf, nb_bins=nb_bins)
-    print(f"Regenerated Pixel Values : {regenerated_pixel_values}")
-    loss = ((ground_truth_pixel_values - regenerated_pixel_values) ** 2).sum()
-    print(f"loss : {loss}")
-    model_optimizer.zero_grad()
-    loss.backward()
-    model_optimizer.step()
-    training_loss.append(loss.item())
-    print(f"Training Losses : {training_loss}")
+#     ray_origins = batch[:,:3].to(device)
+#     print(f"Ray Origins : {ray_origins}")
     
-    break  
-
-
+#     ray_directions = batch[:,3:6].to(device)
+#     print(f"Ray Directions : {ray_directions}")
+    
+#     ground_truth_pixel_values = batch[:,6:].to(device)
+#     print(f"Ground Pixel Values : {ground_truth_pixel_values}")
+    
+#     regenerated_pixel_values = render_rays(model, ray_origins, ray_directions, hn=hn, hf=hf, nb_bins=nb_bins)
+#     print(f"Regenerated Pixel Values : {regenerated_pixel_values}")
+    
+#     loss = ((ground_truth_pixel_values - regenerated_pixel_values) ** 2).sum()
+#     print(f"loss : {loss}")
+    
+#     model_optimizer.zero_grad()
+#     loss.backward()
+#     model_optimizer.step()
+#     training_loss.append(loss.item())
+#     print(f"Training Losses : {training_loss}")
+    
+#     break
+    
 
 
 # ###################################################################

@@ -106,28 +106,28 @@ def get_rays(directions, c2w):
 def concatenate_tensors(tensor1, tensor2):
     return torch.cat((tensor1, tensor2), dim=1)
 
+####################################
+# EXAMPLE USAGE TO VIEW THE DATASET
+####################################
+# data_path = "./rkulkarni1_p2/Phase2/Data/"  # Update this to the actual path
+# mode = "train"  # Can be "train", "val", or "test"
+# all_rays, all_rgbs = loadDataset(data_path, mode)
 
-data_path = "./rkulkarni1_p2/Phase2/Data/"  # Update this to the actual path
-mode = "train"  # Can be "train", "val", or "test"
-all_rays, all_rgbs = loadDataset(data_path, mode)
+# tensor_dataset = concatenate_tensors(all_rays, all_rgbs)
+# model = NerfModel(hidden_dim=256).to(device)
+# model_optimizer = torch.optim.Adam(model.parameters(), lr=5e-4)
+# scheduler = torch.optim.lr_scheduler.MultiStepLR(model_optimizer, milestones=[2, 4, 8], gamma=0.5)
+# data_loader = DataLoader(tensor_dataset, batch_size=1024, shuffle=True)
 
-tensor_dataset = concatenate_tensors(all_rays, all_rgbs)
-model = NerfModel(hidden_dim=256).to(device)
-model_optimizer = torch.optim.Adam(model.parameters(), lr=5e-4)
-scheduler = torch.optim.lr_scheduler.MultiStepLR(model_optimizer, milestones=[2, 4, 8], gamma=0.5)
-data_loader = DataLoader(tensor_dataset, batch_size=1024, shuffle=True)
-
-# Iterate through the DataLoader
-for batch in data_loader:
-    # batch will contain your data. Its structure depends on how your dataset __getitem__ method is implemented.
-    # Assuming you want the first element of the batch
-    print(batch)
-    break  # Exit the loop after the first batch
+# # Iterate through the DataLoader
+# for batch in data_loader:
+#     print(batch)
+#     break  
 
 
-# print(all_rays[:10, :])
-# print(all_rgbs[:10, :])
-# print(tensor_dataset[:10, :])
+# # print(all_rays[:10, :])
+# # print(all_rgbs[:10, :])
+# # print(tensor_dataset[:10, :])
 
 
 

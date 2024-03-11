@@ -12,7 +12,7 @@ from loadDataset import loadDataset
 
 
 @torch.no_grad()
-def test(hn, hf, dataset, chunk_size=10, img_index=0, nb_bins=192, H=400, W=400):
+def test(hn, hf, dataset, chunk_size=10, img_index=0, nb_bins=192, H=400, W=400, data_flag="lego"):
     ray_origins = dataset[img_index * H * W: (img_index + 1) * H * W, :3]
     ray_directions = dataset[img_index * H * W: (img_index + 1) * H * W, 3:6]
 
@@ -27,7 +27,7 @@ def test(hn, hf, dataset, chunk_size=10, img_index=0, nb_bins=192, H=400, W=400)
 
     plt.figure()
     plt.imshow(img)
-    plt.savefig(f'./rkulkarni1_p2/Phase2/outputs/novel_views/img_{img_index}.png', bbox_inches='tight')
+    plt.savefig(f'./rkulkarni1_p2/Phase2/outputs/novel_views_{data_flag}/img_{img_index}.png', bbox_inches='tight')
     plt.close()
 
 
@@ -106,11 +106,11 @@ def render_rays(nerf_model, ray_origins, ray_directions, hn=0, hf=0.5, nb_bins=1
     return c + 1 - weight_sum.unsqueeze(-1)
 
 
-def train(nerf_model, optimizer, scheduler, data_loader, device='cpu', hn=0, hf=1, nb_epochs=int(1e5),nb_bins=192, H=400, W=400, checkpoint_dir="./rkulkarni1_p2/Phase2/checkpoints"):
+def train(nerf_model, optimizer, scheduler, data_loader, device='cpu', hn=0, hf=1, nb_epochs=int(1e5),nb_bins=192, H=400, W=400, checkpoint_dir="./rkulkarni1_p2/Phase2/checkpoints", data_flag="lego"):
     
     # Initialize TensorBoard SummaryWriter
     current_time = time.strftime("%Y%m%d-%H%M%S")
-    writer = SummaryWriter(f'runs/nerf_experiment_{current_time}')
+    writer = SummaryWriter(f'runs/nerf_experiment_{data_flag}_{current_time}')
     
     training_loss = []
     
@@ -147,7 +147,7 @@ def train(nerf_model, optimizer, scheduler, data_loader, device='cpu', hn=0, hf=
         scheduler.step()
         
         # Save checkpoint after every epoch
-        checkpoint_path = os.path.join(checkpoint_dir, f"nerf_model_ship_epoch_{epoch+1}.ckpt")
+        checkpoint_path = os.path.join(checkpoint_dir, f"nerf_model_{data_flag}_epoch_{epoch+1}.ckpt")
         torch.save({
             'epoch': epoch + 1,
             'model_state_dict': nerf_model.state_dict(),
@@ -158,9 +158,7 @@ def train(nerf_model, optimizer, scheduler, data_loader, device='cpu', hn=0, hf=
         
         print(f"Checkpoint saved at {checkpoint_path}")
 
-        # for img_index in range(200):
-        #     test(hn, hf, testing_dataset,chunk_size=5, img_index=img_index, nb_bins=nb_bins, H=H, W=W)
-            
+           
     writer.close() # close tensorboard
     return training_loss
 
@@ -175,27 +173,20 @@ def load_checkpoint(checkpoint_path, model, optimizer, scheduler):
 
 if __name__ == '__main__':
     device = 'cuda'
-    
-    # load datasets
-    # training_dataset = torch.from_numpy(np.load('./rkulkarni1_p2/Phase2/Data/lego/training_data.pkl', allow_pickle=True))
-    # testing_dataset = torch.from_numpy(np.load('./rkulkarni1_p2/Phase2/Data/lego/testing_data.pkl', allow_pickle=True))
-    
-    # Choose which model to train/test
-    data_flag = "ship"
-    
-    if data_flag == "lego":
-        data_path_lego = "./rkulkarni1_p2/Phase2/Data/lego/" 
-        training_dataset = loadDataset(data_path=data_path_lego, mode="train")    
-        testing_dataset = loadDataset(data_path=data_path_lego, mode="test")       
-    elif data_flag == "ship":
-        data_path_ship = "./rkulkarni1_p2/Phase2/Data/ship/"
-        training_dataset = loadDataset(data_path=data_path_ship, mode="train")    
-        testing_dataset = loadDataset(data_path=data_path_ship, mode="test")
-    else:
-        data_path_lego = "./rkulkarni1_p2/Phase2/Data/lego/" 
-        training_dataset = loadDataset(data_path=data_path_lego, mode="train")    
-        testing_dataset = loadDataset(data_path=data_path_lego, mode="test")  
-    
+
+    ##########################
+    # CHOOSE Dataset and Mode 
+    # 1. "lego" or "ship"
+    # 2. True or False 
+    ##########################
+    data_flag = "ship" 
+    train_model = False
+
+    # Load datasets
+    data_path = f"./rkulkarni1_p2/Phase2/Data/{data_flag}/"
+    training_dataset = loadDataset(data_path=data_path, mode="train")    
+    testing_dataset = loadDataset(data_path=data_path, mode="test")
+         
     # Initialize model, optimizer and scheduler
     model = NerfModel(hidden_dim=256).to(device)
     model_optimizer = torch.optim.Adam(model.parameters(), lr=5e-4)
@@ -204,20 +195,18 @@ if __name__ == '__main__':
     ##############################
     # CHANGE FLAG TO CHANGE MODE
     ##############################
-    train_model = True
-    
-    checkpoint_path = "./rkulkarni1_p2/Phase2/checkpoints/nerf_model_ship_epoch_1.ckpt"  # {TODO: make seperate folders for checkpoints}
+    checkpoint_path = f"./rkulkarni1_p2/Phase2/checkpoints/nerf_model_{data_flag}_epoch_1.ckpt"  
     
     if train_model:
-        data_loader = DataLoader(training_dataset, batch_size=512, shuffle=True)
-        train(model, model_optimizer, scheduler, data_loader, device=device, hn=2, hf=6, nb_bins=192, H=400, W=400)
+        data_loader = DataLoader(training_dataset, batch_size=1024, shuffle=True)
+        train(model, model_optimizer, scheduler, data_loader, device=device, hn=2, hf=6, nb_bins=192, H=400, W=400,data_flag=data_flag)
     else:
         # Load the checkpoint
         load_checkpoint(checkpoint_path, model, model_optimizer, scheduler)
     
     # Run test loop after loading the checkpoint
     for img_index in range(200):  # Adjust the range based on your specific requirements
-        test(hn=2, hf=6, dataset=testing_dataset, chunk_size=2, img_index=img_index, nb_bins=192, H=400, W=400)
+        test(hn=2, hf=6, dataset=testing_dataset, chunk_size=10, img_index=img_index, nb_bins=192, H=400, W=400, data_flag=data_flag)
     
     # data_loader = DataLoader(training_dataset, batch_size=1024, shuffle=True)
     # training_loss = train(model, model_optimizer, scheduler, data_loader, nb_epochs=16, device=device, hn=2, hf=6, nb_bins=192, H=400,W=400)

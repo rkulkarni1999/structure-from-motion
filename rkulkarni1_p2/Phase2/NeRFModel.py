@@ -6,9 +6,9 @@ import numpy as np
 # GPU
 #########
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-####################################################
-# NeRF Model : Input - 5D, Output - r,g,b and sigma
-####################################################
+###############################################################
+# NeRF Model : Input - 3 positions, Outputs - r,g,b and sigma
+###############################################################
 class NerfModel(nn.Module):
     def __init__(self, embedding_dim_pos=10, embedding_dim_direction=4, hidden_dim=128):   
         super(NerfModel, self).__init__()
@@ -46,5 +46,35 @@ class NerfModel(nn.Module):
         h, sigma = tmp[:, :-1], self.relu(tmp[:, -1]) # h: [batch_size, hidden_dim], sigma: [batch_size]
         h = self.block3(torch.cat((h, emb_d), dim=1)) # h: [batch_size, hidden_dim // 2]
         c = self.block4(h) # c: [batch_size, 3]
+        return c, sigma
+
+class NerfModel_without_encoding(nn.Module):
+    def __init__(self, embedding_dim_pos=0, embedding_dim_direction=0, hidden_dim=128):   
+        super(NerfModel_without_encoding, self).__init__()
+        
+        self.block1 = nn.Sequential(nn.Linear(embedding_dim_pos * 6 + 3, hidden_dim), nn.ReLU(),
+                                    nn.Linear(hidden_dim, hidden_dim), nn.ReLU(),
+                                    nn.Linear(hidden_dim, hidden_dim), nn.ReLU(),
+                                    nn.Linear(hidden_dim, hidden_dim), nn.ReLU(), )
+        # density estimation
+        self.block2 = nn.Sequential(nn.Linear(embedding_dim_pos * 6 + hidden_dim + 3, hidden_dim), nn.ReLU(),
+                                    nn.Linear(hidden_dim, hidden_dim), nn.ReLU(),
+                                    nn.Linear(hidden_dim, hidden_dim), nn.ReLU(),
+                                    nn.Linear(hidden_dim, hidden_dim + 1), )
+        # color estimation
+        self.block3 = nn.Sequential(nn.Linear(embedding_dim_direction * 6 + hidden_dim + 3, hidden_dim // 2), nn.ReLU(), )
+        self.block4 = nn.Sequential(nn.Linear(hidden_dim // 2, 3), nn.Sigmoid(), )
+        self.relu = nn.ReLU()
+
+    def forward(self, o, d):
+        
+        emb_x = o
+        emb_d = d
+        
+        h = self.block1(emb_x) 
+        tmp = self.block2(torch.cat((h, emb_x), dim=1))
+        h, sigma = tmp[:, :-1], self.relu(tmp[:, -1]) 
+        h = self.block3(torch.cat((h, emb_d), dim=1)) 
+        c = self.block4(h) 
         return c, sigma
 

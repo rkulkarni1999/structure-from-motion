@@ -7,12 +7,12 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 import time
 import os
+from SSIM_loss import calculate_ssim
 
 from loadDataset import loadDataset
 
-
 @torch.no_grad()
-def test(hn, hf, dataset, chunk_size=10, img_index=0, nb_bins=192, H=400, W=400, data_flag="lego"):
+def test(model, device,hn, hf, dataset, chunk_size=10, img_index=0, nb_bins=192, H=400, W=400, data_flag="lego" ):
     ray_origins = dataset[img_index * H * W: (img_index + 1) * H * W, :3]
     ray_directions = dataset[img_index * H * W: (img_index + 1) * H * W, 3:6]
 
@@ -29,7 +29,6 @@ def test(hn, hf, dataset, chunk_size=10, img_index=0, nb_bins=192, H=400, W=400,
     plt.imshow(img)
     plt.savefig(f'./rkulkarni1_p2/Phase2/outputs/novel_views_{data_flag}/img_{img_index}.png', bbox_inches='tight')
     plt.close()
-
 
 class NerfModel(nn.Module):
     def __init__(self, embedding_dim_pos=10, embedding_dim_direction=4, hidden_dim=128):   
@@ -61,7 +60,7 @@ class NerfModel(nn.Module):
         return torch.cat(out, dim=1)
 
     def forward(self, o, d):
-        emb_x = self.positional_encoding(o, self.embedding_dim_pos) # emb_x: [batch_size, embedding_dim_pos * 6]
+        emb_x = self.positional_encoding(o, self.embedding_dim_pos) # emb_x: [batch_size, embedding_dim_pos * 6 +3]
         emb_d = self.positional_encoding(d, self.embedding_dim_direction) # emb_d: [batch_size, embedding_dim_direction * 6]
         h = self.block1(emb_x) # h: [batch_size, hidden_dim]
         tmp = self.block2(torch.cat((h, emb_x), dim=1)) # tmp: [batch_size, hidden_dim + 1]
@@ -75,7 +74,6 @@ def compute_accumulated_transmittance(alphas):
     accumulated_transmittance = torch.cumprod(alphas, 1)
     return torch.cat((torch.ones((accumulated_transmittance.shape[0], 1), device=alphas.device),
                     accumulated_transmittance[:, :-1]), dim=-1)
-
 
 def render_rays(nerf_model, ray_origins, ray_directions, hn=0, hf=0.5, nb_bins=192):
     device = ray_origins.device
@@ -106,15 +104,17 @@ def render_rays(nerf_model, ray_origins, ray_directions, hn=0, hf=0.5, nb_bins=1
     return c + 1 - weight_sum.unsqueeze(-1)
 
 
-def train(nerf_model, optimizer, scheduler, data_loader, device='cpu', hn=0, hf=1, nb_epochs=int(1e5),nb_bins=192, H=400, W=400, checkpoint_dir="./rkulkarni1_p2/Phase2/checkpoints", data_flag="lego"):
+def train(nerf_model, optimizer, scheduler, data_loader, device='cpu', hn=0, hf=1, nb_epochs=int(5),nb_bins=192, H=400, W=400, checkpoint_dir="./rkulkarni1_p2/Phase2/checkpoints", data_flag="lego"):
     
     # Initialize TensorBoard SummaryWriter
     current_time = time.strftime("%Y%m%d-%H%M%S")
     writer = SummaryWriter(f'runs/nerf_experiment_{data_flag}_{current_time}')
     
     training_loss = []
-    
+    psnr_loss = []
     total_iterations = 0
+    plot_lossgraph = True
+    iteration = []
         
     os.makedirs(checkpoint_dir, exist_ok=True) # create directory if there exist none. 
 
@@ -128,6 +128,12 @@ def train(nerf_model, optimizer, scheduler, data_loader, device='cpu', hn=0, hf=
             
             regenerated_px_values = render_rays(nerf_model, ray_origins, ray_directions, hn=hn, hf=hf, nb_bins=nb_bins) 
             loss = ((ground_truth_px_values - regenerated_px_values) ** 2).sum()
+            mean_loss = ((ground_truth_px_values - regenerated_px_values) ** 2).mean()
+            
+            if batch_idx%100 == 0 :
+                psnr = -10. * torch.log10(mean_loss)
+                psnr_loss.append(psnr.item())
+                iteration.append(batch_idx)
 
             optimizer.zero_grad()
             loss.backward()
@@ -140,6 +146,16 @@ def train(nerf_model, optimizer, scheduler, data_loader, device='cpu', hn=0, hf=
             # Log loss for each iteration
             writer.add_scalar('Loss/Iteration', loss.item(), total_iterations)
             total_iterations += 1
+
+            if plot_lossgraph:
+                plt.figure(figsize=(10, 6))  # Optional: Adjust the figure size
+                plt.plot(iteration,psnr_loss, linestyle='-', color='b')  # Plotting the data without markers
+                plt.title('Line Plot of Data')  # Adding a title
+                plt.xlabel('Iterations')  # X-axis label
+                plt.ylabel('psnr')  # Y-axis label
+                plt.grid(True)  # Adding grid lines for better readability
+                # Save the plot to your desired location
+                plt.savefig(f'psnrloss_{data_flag}.png')
 
         # Log average epoch loss
         epoch_loss_avg = epoch_loss / len(data_loader)
@@ -157,7 +173,6 @@ def train(nerf_model, optimizer, scheduler, data_loader, device='cpu', hn=0, hf=
         }, checkpoint_path)
         
         print(f"Checkpoint saved at {checkpoint_path}")
-
            
     writer.close() # close tensorboard
     return training_loss
@@ -171,16 +186,15 @@ def load_checkpoint(checkpoint_path, model, optimizer, scheduler):
     loss = checkpoint['loss']
     return epoch, loss
 
-if __name__ == '__main__':
+def main(data_flag):
     device = 'cuda'
-
     ##########################
     # CHOOSE Dataset and Mode 
     # 1. "lego" or "ship"
     # 2. True or False 
     ##########################
-    data_flag = "ship" 
-    train_model = False
+    # data_flag = "lego" 
+    train_model = True
 
     # Load datasets
     data_path = f"./rkulkarni1_p2/Phase2/Data/{data_flag}/"
@@ -206,7 +220,15 @@ if __name__ == '__main__':
     
     # Run test loop after loading the checkpoint
     for img_index in range(200):  # Adjust the range based on your specific requirements
-        test(hn=2, hf=6, dataset=testing_dataset, chunk_size=10, img_index=img_index, nb_bins=192, H=400, W=400, data_flag=data_flag)
+        test(model, device=device ,hn=2, hf=6, dataset=testing_dataset, chunk_size=10, img_index=img_index, nb_bins=192, H=400, W=400, data_flag=data_flag)
+
+if __name__ == '__main__':
+    data_flag = ["lego", "ship"]
+
+    for data_f in data_flag:
+        main(data_flag=data_f)
+
+    
     
     # data_loader = DataLoader(training_dataset, batch_size=1024, shuffle=True)
     # training_loss = train(model, model_optimizer, scheduler, data_loader, nb_epochs=16, device=device, hn=2, hf=6, nb_bins=192, H=400,W=400)

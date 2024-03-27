@@ -1,43 +1,95 @@
-# Buildings Built in Minutes - Structure from Motion
+# 3D Reconstruction using Classical Structure from Motion (SfM). 
 
-## 1. Introduction
+This project showcases the development of an advanced system for 3D scene reconstruction using Structure from Motion (SfM). The system processes a sequence of images to reconstruct a 3D model of a scene. 
 
-Structure from Motion (SfM) is a technique for reconstructing a 3D scene and simultaneously obtaining the camera poses with respect to the scene using a series of images from different viewpoints. This process was famously utilized in projects like "Building Rome in a Day" by Agarwal et al., and is also the principle behind Microsoft Photosynth. Open-source algorithms such as VisualSFM make this technology accessible for experimentation.
+## Methodology
 
-## 2. Dataset for Classical SfM
+Structure from Motion is a process that uses a series of 2D images to reconstruct a 3D scene. This phase involved the following steps:
 
-For our classical SfM algorithm demonstration, we use a dataset comprising 5 images of Unity Hall at Worcester Polytechnic Institute, captured with a Samsung S22 Ultra camera. The images were resized to 800×600 pixels before camera calibration was performed using a Radial-Tangential model in MATLAB R2022a's Camera Calibrator Application.
+- Feature Matching and Outlier Rejection with RANSAC
+- Fundamental Matrix Estimation
+- Essential Matrix Estimation from the Fundamental Matrix
+- Camera Pose Estimation from the Essential Matrix
+- Cheirality Condition Check with Triangulation
+- Perspective-n-Point
+- Bundle Adjustment
 
-## 4. Classical Approach to the SfM Problem
+### Input
 
-### 4.1. Feature Matching, Fundamental Matrix, and RANSAC
+The dataset consists of 5 images of Unity Hall at WPI, captured using a Samsung S22 Ultra with the following settings: f/1.8 aperture, ISO 50, and 1/500 sec shutter speed. Four matching files (`matching*.txt`) detail feature correspondences between image pairs.
 
-Using SIFT keypoints and descriptors, we can match features across images. The Fundamental matrix (*F*) plays a crucial role here, representing the epipolar geometry between two views. It's essential to refine these matches and reject outliers using RANSAC to improve the accuracy of *F* estimation.
+![Initial Images](./rkulkarni1_p2/Phase1/Data/Imgs.png)
 
-### 4.2. Estimating Fundamental Matrix
+### Initial Feature Matching
 
-The Fundamental matrix (*F*) is a 3×3 rank 2 matrix that relates corresponding points in two images from different views. Understanding epipolar geometry, which is the intrinsic projective geometry between two views, is crucial for grasping the concept of *F*.
+![Feature Matching](./rkulkarni1_p2/Phase1/Data/IntermediateOutputImages/beforeransac.png)
 
-#### 4.2.1. Epipolar Geometry
+- RANSAC results showing inliers:
 
-Epipolar geometry involves understanding how points in 3D space (captured in two images) relate to each other through their images points, denoted as **x** and **x'**. The key takeaway is that the search for corresponding points can be limited to the epipolar line in the other image, simplifying the matching process.
+![Feature Matching](./rkulkarni1_p2/Phase1/Data/IntermediateOutputImages/afterransac.png)
 
-#### 4.2.2. The Fundamental Matrix (*F*)
+- Cheirality check visualizing all possible camera poses:
 
-*F* represents epipolar geometry algebraically. For *m* correspondences, the epipolar constraint **x'i^T F xi = 0** must be satisfied. Using the Eight-point algorithm, *F* can be estimated from at least 8 point correspondences between two images. This process involves setting up a homogeneous linear system and solving it using Singular Value Decomposition (SVD) to enforce the rank 2 constraint on *F*.
+![Cheirality Check](rkulkarni1_p2\Phase1\Data\IntermediateOutputImages\allpossible.png)
 
-#### 4.2.3. Match Outlier Rejection via RANSAC
+- Triangulation using the correct camera pose:
 
-To handle noisy data and outliers from feature matching, RANSAC is employed to select the model of *F* with the maximum number of inliers, improving the robustness of the fundamental matrix estimation.
+![Triangulation](rkulkarni1_p2\Phase1\Data\IntermediateOutputImages\Figure_1.png)
 
-### 4.3. Estimate Essential Matrix from Fundamental Matrix
+- Linear Triangulation vs Non-Linear Triangular Traingulation for Set 1 and Set 2. 
 
-The Essential Matrix (*E*) relates corresponding points assuming pinhole camera models. It can be derived from *F* and the camera calibration matrix (*K*), with *E* = *K^T F K*. Correcting *E* to have singular values (1,1,0) ensures it adheres to its constraint of having 5 degrees of freedom.
+![Linear vs Non-Linear Triangulation](./rkulkarni1_p2/Phase1/Data/IntermediateOutputImages/beforeandafter_nonliner.png)
 
-### 4.4. Estimate Camera Pose from Essential Matrix
+- Before and After Bundle Adjustment for sets 1 and 2. 
 
-Four possible camera pose configurations can be derived from *E*. The correct configuration ensures the reconstructed 3D points are in front of both cameras, determined by the cheirality condition.
+![Before and After Bundle Adjustment](rkulkarni1_p2\Phase1\Data\IntermediateOutputImages/beforeandafterbundle.png)
 
-### 4.5. Triangulation Check for Cheirality Condition
+### Usage
 
-The correct camera pose is identified by triangulating 3D points and ensuring they satisfy the cheirality condition, which confirms that the points are in front of the camera. This step is crucial for resolving the ambiguity in camera poses obtained from the essential matrix.
+To run the SfM pipeline:
+
+```bash
+python3 Wrapper.py
+```
+
+# Novel View Synthesis using Neural Radiance Fields (NeRF):
+Implemented the original NERF method [from this paper](https://arxiv.org/abs/2003.08934).
+
+### Input:
+Download the lego data for NeRF from the original author’s link [here](https://drive.google.com/drive/folders/1lrDkQanWtTznf48FCaW5lX9ToRdNDF1a)
+
+#### Sample input
+
+<img src="./rkulkarni1_p2/Phase2/inputs/input.png"  align="center" alt="Undistorted" width="500"/>
+
+### Neural Network used
+<img src="./rkulkarni1_p2/Phase2/inputs/NETWROK.png"  align="center" alt="Undistorted" width="300"/>
+
+### Training without Positional Encoding
+<img src="rkulkarni1_p2\Phase2\outputs\training_loss_data\loss_vs_iteration_lego_3_epochs_without_encoding.png"  align="center" alt="Undistorted" width="400"/>
+
+### Training with Positional Encoding
+<img src="rkulkarni1_p2\Phase2\outputs\training_loss_data\loss_vs_iteration_lego_3_epochs.png"  align="center" alt="Undistorted" width="400"/>
+
+### Result on Test without positional encoding
+<img src="./rkulkarni1_p2/Phase2/NeRF_lego_no_p_enc.gif"  align="center" alt="Undistorted" width="500"/>
+
+### Result on Test set with positional encoding
+<img src="./rkulkarni1_p2/Phase2/NeRF_lego.gif"  align="center" alt="Undistorted" width="500"/>
+
+<img src="./rkulkarni1_p2/Phase2/NeRF_ship.gif"  align="center" alt="Undistorted" width="500"/>
+
+### Usage Guidelines:
+
+#### Training:
+1. Change the directory to Phase 2.
+2. To train the NeRF model on GPU:
+
+```
+python3 Wrapper,py
+```
+3. Output of Loss plot will be saved in Results folder.
+
+#### Testing
+1. Change the flag in the ```Wrapper.py``` script and follow the training instructions. 
+

@@ -15,12 +15,12 @@ import random
 import torch.nn.functional as F
 
 from NeRFModel import device 
-from computeTransmittance import compute_accumulated_transmittance
+from computeTransmittance import transmittance
 
 ###############################
 # RENDER RAYS
 ############################### 
-def render_rays(nerf_model, ray_origins, ray_directions, hn=0, hf=0.5, nb_bins=192):
+def render(nerf_model, ray_origins, ray_directions, hn=0, hf=0.5, nb_bins=192):
     
     t = torch.linspace(hn, hf, nb_bins, device=device).expand(ray_origins.shape[0], nb_bins)
     
@@ -43,7 +43,7 @@ def render_rays(nerf_model, ray_origins, ray_directions, hn=0, hf=0.5, nb_bins=1
     sigma = sigma.reshape(x.shape[:-1])
     
     alpha = 1 - torch.exp(-sigma * delta)  # [batch_size, nb_bins]
-    weights = compute_accumulated_transmittance(1 - alpha).unsqueeze(2) * alpha.unsqueeze(2)
+    weights = transmittance(1 - alpha).unsqueeze(2) * alpha.unsqueeze(2)
     # Compute the pixel values as a weighted sum of colors along each ray
     c = (weights * colors).sum(dim=1)
     weight_sum = weights.sum(-1).sum(-1)  # Regularization for white background 

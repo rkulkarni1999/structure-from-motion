@@ -30,11 +30,11 @@ The dataset consists of 5 images of Unity Hall at WPI, captured using a Samsung 
 
 - Cheirality check visualizing all possible camera poses:
 
-![Cheirality Check](rkulkarni1_p2\Phase1\Data\IntermediateOutputImages\allpossible.png)
+![Cheirality Check](./rkulkarni1_p2/Phase1/Data/IntermediateOutputImages/allpossible.png)
 
 - Triangulation using the correct camera pose:
 
-![Triangulation](rkulkarni1_p2\Phase1\Data\IntermediateOutputImages\Figure_1.png)
+![Triangulation](./rkulkarni1_p2/Phase1/Data/IntermediateOutputImages/Figure_1.png)
 
 - Linear Triangulation vs Non-Linear Triangular Traingulation for Set 1 and Set 2. 
 

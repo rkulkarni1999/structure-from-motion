@@ -18,31 +18,31 @@ Structure from Motion is a process that uses a series of 2D images to reconstruc
 
 The dataset consists of 5 images of Unity Hall at WPI, captured using a Samsung S22 Ultra with the following settings: f/1.8 aperture, ISO 50, and 1/500 sec shutter speed. Four matching files (`matching*.txt`) detail feature correspondences between image pairs.
 
-![Initial Images](./rkulkarni1_p2/Phase1/Data/Imgs.png)
+<img src="./rkulkarni1_p2/Phase1/Data/Imgs.png"  align="center" alt="Undistorted" width="500"/>
 
 ### Initial Feature Matching
 
-![Feature Matching](./rkulkarni1_p2/Phase1/Data/IntermediateOutputImages/beforeransac.png)
+<img src="./rkulkarni1_p2/Phase1/Data/IntermediateOutputImages/beforeransac.png"  align="center" alt="Undistorted" width="500"/>
 
 - RANSAC results showing inliers:
 
-![Feature Matching](./rkulkarni1_p2/Phase1/Data/IntermediateOutputImages/afterransac.png)
+<img src="./rkulkarni1_p2/Phase1/Data/IntermediateOutputImages/afterransac.png"  align="center" alt="Undistorted" width="500"/>
 
 - Cheirality check visualizing all possible camera poses:
 
-![Cheirality Check](./rkulkarni1_p2/Phase1/Data/IntermediateOutputImages/allpossible.png)
+<img src="./rkulkarni1_p2/Phase1/Data/IntermediateOutputImages/allpossible.png"  align="center" alt="Undistorted" width="500"/>
 
 - Triangulation using the correct camera pose:
 
-![Triangulation](./rkulkarni1_p2/Phase1/Data/IntermediateOutputImages/Figure_1.png)
+<img src="./rkulkarni1_p2/Phase1/Data/IntermediateOutputImages/Figure_1.png"  align="center" alt="Undistorted" width="500"/>
 
 - Linear Triangulation vs Non-Linear Triangular Traingulation for Set 1 and Set 2. 
 
-![Linear vs Non-Linear Triangulation](./rkulkarni1_p2/Phase1/Data/IntermediateOutputImages/beforeandafter_nonliner.png)
+<img src="./rkulkarni1_p2/Phase1/Data/IntermediateOutputImages/beforeandafter_nonliner.png"  align="center" alt="Undistorted" width="500"/>
 
 - Before and After Bundle Adjustment for sets 1 and 2. 
 
-![Before and After Bundle Adjustment](rkulkarni1_p2\Phase1\Data\IntermediateOutputImages/beforeandafterbundle.png)
+<img src="./rkulkarni1_p2/Phase1/Data/IntermediateOutputImages/beforeandafterbundle.png"  align="center" alt="Undistorted" width="500"/>
 
 ### Usage
 
